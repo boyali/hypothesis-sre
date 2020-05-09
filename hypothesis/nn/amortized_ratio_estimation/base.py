@@ -13,8 +13,8 @@ class BaseRatioEstimator(torch.nn.Module):
 
         return log_ratios.sigmoid(), log_ratios
 
-    def log_ratio(self, **kwargs):
-        raise NotImplementedError
+    # def log_ratio(self, **kwargs):
+    #     raise NotImplementedError
 
 
 
@@ -35,13 +35,17 @@ class RatioEstimatorEnsemble(BaseRatioEstimator):
         if RatioEstimatorEnsemble.KEYWORD_REDUCE in kwargs.keys():
             reduce = kwargs[RatioEstimatorEnsemble.KEYWORD_REDUCE]
             del kwargs[RatioEstimatorEnsemble.KEYWORD_REDUCE]
+
         else:
             reduce = True # Default value
+
         # Estimate the log ratios
         log_ratios = []
         for estimator in self.estimators:
             log_ratios.append(estimator.log_ratio(**kwargs))
+
         log_ratios = torch.cat(log_ratios, dim=1)
+
         if reduce:
             log_ratios = self.reduce(log_ratios).view(-1, 1)
 
@@ -75,13 +79,17 @@ class BaseCriterion(torch.nn.Module):
         denominator,
         batch_size=hypothesis.default.batch_size,
         logits=False):
+
         super(BaseCriterion, self).__init__()
+
         if logits:
             self.criterion = torch.nn.BCEWtihLogitsLoss()
             self._forward = self._forward_with_logits
+
         else:
             self.criterion = torch.nn.BCELoss()
             self._forward = self._forward_without_logits
+
         self.batch_size = batch_size
         self.estimator = estimator
         self.independent_random_variables = self._derive_independent_random_variables(denominator)
@@ -106,10 +114,13 @@ class BaseCriterion(torch.nn.Module):
 
     def _forward_without_logits(self, **kwargs):
         y_dependent, _ = self.estimator(**kwargs)
+
         for group in self.independent_random_variables:
             random_indices = torch.randperm(self.batch_size)
+
             for variable in group:
                 kwargs[variable] = kwargs[variable][random_indices] # Make variable independent.
+
         y_independent, _ = self.estimator(**kwargs)
         loss = self.criterion(y_dependent, self.ones) + self.criterion(y_independent, self.zeros)
 
@@ -117,10 +128,12 @@ class BaseCriterion(torch.nn.Module):
 
     def _forward_with_logits(self, **kwargs):
         y_dependent = self.estimator.log_ratio(**kwargs)
+
         for group in self.independent_random_variables:
             random_indices = torch.randperm(self.batch_size)
             for variable in group:
                 kwargs[variable] = kwargs[variable][random_indices] # Make variable independent.
+
         y_independent = self.estimator.log_ratio(**kwargs)
         loss = self.criterion(y_dependent, self.ones) + self.criterion(y_independent, self.zeros)
 

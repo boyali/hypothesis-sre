@@ -19,8 +19,10 @@ class LikelihoodToEvidenceRatioEstimatorMLP(BaseLikelihoodToEvidenceRatioEstimat
         activation=hypothesis.default.activation,
         dropout=hypothesis.default.dropout,
         layers=hypothesis.default.trunk):
+
         super(LikelihoodToEvidenceRatioEstimatorMLP, self).__init__()
         dimensionality = compute_dimensionality(shape_inputs) + compute_dimensionality(shape_outputs)
+
         self.mlp = MultiLayeredPerceptron(
             shape_xs=(dimensionality,),
             shape_ys=(1,),
@@ -46,9 +48,11 @@ class LikelihoodToEvidenceRatioEstimatorNeuromodulatedMLP(BaseLikelihoodToEviden
         layers=hypothesis.default.trunk):
         super(LikelihoodToEvidenceRatioEstimatorNeuromodulatedMLP, self).__init__()
         # Allocate the neuromodulated activation.
+
         neuromodulated_activation = allocate_neuromodulated_activation(
             activation=activation,
             allocator=controller_allocator)
+
         # Check if the specified activation is an i
         self.mlp = MultiLayeredPerceptron(
             shape_xs=shape_outputs,
